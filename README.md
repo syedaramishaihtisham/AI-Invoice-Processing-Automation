@@ -276,10 +276,6 @@ Asana Finance Task
 
 ![Approval Check](screenshots/approval_check.png)
 
-### 🔹 Invoice Tracker
-
-![Invoice Tracker](screenshots/invoice_tracker.png)
-
 ### 🔹 Asana Finance Task
 
 ![Asana Finance Task](screenshots/asana_task.png)
@@ -303,7 +299,6 @@ AI-Invoice-Processing-Automation/
     ├── invoice_email.png
     ├── manager_approval.png
     ├── approval_check.png
-    ├── invoice_tracker.png
     ├── asana_task.png
     └── auto_approved_invoice.png
 ```
