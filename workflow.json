@@ -1,0 +1,817 @@
+{
+  "name": "AI Invoice Processing & Payment Approval Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e3cef5ab-2276-4064-b34d-f84be1d541c5",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7fKllvlXd4YeeeoO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        0
+      ],
+      "id": "0c9edf9d-c774-4c68-85ef-62f0c6bb6599",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an invoice data extraction assistant.\n\nExtract invoice information from the invoice text provided below.\n\nReturn the information according to the connected output parser.\n\nInvoice text:\n{{ $json.text }}\n\nRules:\n- Extract the actual values from the provided invoice text.\n- Do not use example or hardcoded values.\n- Do not invent information.\n- If a field is not present, return an empty string for text fields and 0 for numeric fields.\n- Extract all invoice line items.\n- Calculate subtotal, tax, and total only when they are clearly available in the invoice.\n- Preserve the invoice number exactly as written.\n- Return only the structured output required by the output parser.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        352,
+        0
+      ],
+      "id": "d703b9b2-ee30-4f84-b412-911b56abf24f",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        352,
+        144
+      ],
+      "id": "51dca4c9-29b9-4675-9c9c-cda95b284c64",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "A434aarOdeb4O3nU",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"vendor_name\": \"ABC Software Solutions\",\n  \"vendor_email\": \"billing@abcsoftware.example\",\n  \"invoice_number\": \"INV-2026-1045\",\n  \"invoice_date\": \"2026-08-12\",\n  \"due_date\": \"2026-08-26\",\n  \"items\": [\n    {\n      \"description\": \"Automation Platform Subscription\",\n      \"quantity\": 1,\n      \"unit_price\": 1200\n    }\n  ],\n  \"subtotal\": 1200,\n  \"tax\": 120,\n  \"total\": 1320,\n  \"currency\": \"USD\",\n  \"payment_terms\": \"Net 14\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        144
+      ],
+      "id": "05a17d96-37f5-4f79-8a84-387f7be80ccd",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "purposework686@gmail.com",
+        "subject": "=Invoice Approval Required - {{ $json.output.invoice_number }}",
+        "message": "=Hello Manager,  An invoice requires your approval.  Invoice Number: {{ $json.output.invoice_number }} Vendor: {{ $json.output.vendor_name }} Invoice Date: {{ $json.output.invoice_date }} Due Date: {{ $json.output.due_date }} Subtotal: {{ $json.output.subtotal }} Tax: {{ $json.output.tax }} Total: {{ $json.output.total }} {{ $json.output.currency }} Payment Terms: {{ $json.output.payment_terms }}  Please review and approve this invoice.  Regards, Invoice Automation System",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 2,
+              "resumeUnit": "days"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -160
+      ],
+      "id": "b3c60960-0eda-4e15-8f0b-bd4c67313d28",
+      "name": "Send message and wait for response",
+      "webhookId": "9136d031-64e7-4f49-b06c-821cfb9ace9a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7fKllvlXd4YeeeoO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1w2sjwVHRhuHM5lFfk_8zV6KC4oDGWPHIxfR64CJmepI",
+          "mode": "list",
+          "cachedResultName": "AI Invoice Processing & Payment Approval Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1w2sjwVHRhuHM5lFfk_8zV6KC4oDGWPHIxfR64CJmepI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1w2sjwVHRhuHM5lFfk_8zV6KC4oDGWPHIxfR64CJmepI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Vendor Name": "={{ $('payment check').item.json.output.vendor_name }}",
+            "Vendor Email": "={{ $('payment check').item.json.output.vendor_email }}",
+            "Invoice Number": "={{ $('payment check').item.json.output.invoice_number }}",
+            "Invoice Date": "={{ $('payment check').item.json.output.invoice_date }}",
+            "Due Date": "={{ $('payment check').item.json.output.due_date }}",
+            "Subtotal": "={{ $('payment check').item.json.output.subtotal }}",
+            "Tax": "={{ $('payment check').item.json.output.tax }}",
+            "Total": "={{ $('payment check').item.json.output.total }}",
+            "Currency": "={{ $('payment check').item.json.output.currency }}",
+            "Payment Terms": "={{ $('payment check').item.json.output.payment_terms }}",
+            "Approval Status": "Approved",
+            "Processing Status": " Pending Payment"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Vendor Name",
+              "displayName": "Vendor Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vendor Email",
+              "displayName": "Vendor Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Date",
+              "displayName": "Invoice Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment Terms",
+              "displayName": "Payment Terms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Approval Status",
+              "displayName": "Approval Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processing Status",
+              "displayName": "Processing Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1280,
+        -272
+      ],
+      "id": "b892242b-0fef-4912-8dd1-552a6636e7d5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o10OGF3i2mV3urzQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "86ee8af6-b8a8-4c0f-9234-192b0a37fdc1",
+              "leftValue": "={{ $json.output.total }}",
+              "rightValue": 1000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        656,
+        0
+      ],
+      "id": "92e170cf-d162-46d1-9831-0fff90a5b95f",
+      "name": "payment check"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2d9b39ba-dafa-46d8-ad71-9139857cbcac",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1072,
+        -160
+      ],
+      "id": "1e1d06ce-91c7-4b3d-ae93-fb774c2ce944",
+      "name": "manager approval"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "workspace": "1217179342419980",
+        "name": "=Invoice Payment - {{ $('payment check').item.json.output.invoice_number }} - {{ $('payment check').item.json.output.vendor_name }}",
+        "otherProperties": {
+          "due_on": "={{ $('payment check').item.json.output.due_date.toDateTime().format('yyyy-MM-dd') }}",
+          "notes": "=Invoice Details\n\nVendor: {{ $('payment check').item.json.output.vendor_name }}\nVendor Email: {{ $('payment check').item.json.output.vendor_email }}\nInvoice Number: {{ $('payment check').item.json.output.invoice_number }}\nInvoice Date: {{ $('payment check').item.json.output.invoice_date }}\nDue Date:{{ $('payment check').item.json.output.due_date }}\n\nSubtotal:{{ $('payment check').item.json.output.subtotal }}\nTax: {{ $('payment check').item.json.output.tax }}\nTotal: {{ $('payment check').item.json.output.total }}{{ $('payment check').item.json.output.currency }}\n\nPayment Terms: {{ $('payment check').item.json.output.payment_terms }}\n\nApproval Status: Approved"
+        }
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -272
+      ],
+      "id": "d8467bce-6661-42b5-8eec-ad8dd6a67a78",
+      "name": "Create a task",
+      "credentials": {
+        "asanaOAuth2Api": {
+          "id": "NE85rsqMUC1gzTfE",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "move",
+        "id": "={{ $json.gid }}",
+        "projectId": "1217400235692441",
+        "section": "1217400235692444"
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -272
+      ],
+      "id": "a7219dc7-e9f3-4735-bbad-f5106a3eb10e",
+      "name": "Move a task",
+      "credentials": {
+        "asanaOAuth2Api": {
+          "id": "NE85rsqMUC1gzTfE",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('AI Agent').item.json.output.vendor_email }}",
+        "subject": "=Invoice Rejected - {{ $('AI Agent').item.json.output.invoice_number }}",
+        "emailType": "text",
+        "message": "=Hello {{ $('AI Agent').item.json.output.vendor_name }},  Your invoice has not been approved.  Invoice Number: {{ $('AI Agent').item.json.output.invoice_number }} Invoice Total: {{ $('AI Agent').item.json.output.total }} {{ $('AI Agent').item.json.output.currency }}  Please contact the relevant department if you require further information.  Regards, Finance Department",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        -64
+      ],
+      "id": "fe88cae2-1c4c-44a2-beae-46fed1099c24",
+      "name": "Send a message",
+      "webhookId": "c8e07a5d-5ebc-4901-a6b9-f8a636bd675d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7fKllvlXd4YeeeoO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1w2sjwVHRhuHM5lFfk_8zV6KC4oDGWPHIxfR64CJmepI",
+          "mode": "list",
+          "cachedResultName": "AI Invoice Processing & Payment Approval Automation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1w2sjwVHRhuHM5lFfk_8zV6KC4oDGWPHIxfR64CJmepI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1w2sjwVHRhuHM5lFfk_8zV6KC4oDGWPHIxfR64CJmepI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Vendor Name": "={{ $('AI Agent').item.json.output.vendor_name }}",
+            "Vendor Email": "={{ $('AI Agent').item.json.output.vendor_email }}",
+            "Invoice Number": "={{ $('AI Agent').item.json.output.invoice_number }}",
+            "Invoice Date": "={{ $('AI Agent').item.json.output.invoice_date }}",
+            "Due Date": "={{ $('AI Agent').item.json.output.due_date }}",
+            "Subtotal": "={{ $('AI Agent').item.json.output.subtotal }}",
+            "Tax": "={{ $('AI Agent').item.json.output.tax }}",
+            "Total": "={{ $('AI Agent').item.json.output.total }}",
+            "Currency": "={{ $('AI Agent').item.json.output.currency }}",
+            "Payment Terms": "={{ $('AI Agent').item.json.output.payment_terms }}",
+            "Approval Status": "Auto-Approved",
+            "Processing Status": "Pending Payment"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Vendor Name",
+              "displayName": "Vendor Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vendor Email",
+              "displayName": "Vendor Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Date",
+              "displayName": "Invoice Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment Terms",
+              "displayName": "Payment Terms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Approval Status",
+              "displayName": "Approval Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processing Status",
+              "displayName": "Processing Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        144
+      ],
+      "id": "5006a94a-00f1-43bd-b330-74cd32809a27",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "o10OGF3i2mV3urzQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "workspace": "1217179342419980",
+        "name": "=Auto Payment -{{ $json['Invoice Number'] }} - {{ $json['Vendor Name'] }}",
+        "otherProperties": {
+          "due_on": "={{ $json['Due Date'].toDateTime().format('yyyy-MM-dd') }}",
+          "notes": "=Invoice Details\n\nVendor: {{ $json['Vendor Name'] }}\nVendor Email: {{ $json['Vendor Email'] }}\nInvoice Number: {{ $json['Invoice Number'] }}\nInvoice Date: {{ $json['Invoice Date'] }}\nDue Date: {{ $json['Due Date'] }}\n\nSubtotal: {{ $json.Subtotal }}\nTax: {{ $json.Tax }}\nTotal: {{ $json.Total }} {{ $json.Currency }}\n\nPayment Terms: {{ $json['Payment Terms'] }}\n\nApproval Status: Auto-Approved",
+          "projects": [
+            "1217400235692441"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        144
+      ],
+      "id": "a1d5e565-fa7c-4d52-8abd-1364f34cc6db",
+      "name": "Create a task1",
+      "credentials": {
+        "asanaOAuth2Api": {
+          "id": "NE85rsqMUC1gzTfE",
+          "name": "Asana account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "move",
+        "id": "={{ $json.gid }}",
+        "projectId": "1217400235692441",
+        "section": "1217400235692444"
+      },
+      "type": "n8n-nodes-base.asana",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        144
+      ],
+      "id": "950eba1c-4e82-4b0f-93ee-d2dfd2b63beb",
+      "name": "Move a task1",
+      "credentials": {
+        "asanaOAuth2Api": {
+          "id": "NE85rsqMUC1gzTfE",
+          "name": "Asana account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "payment check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "manager approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "payment check": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manager approval": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Create a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task": {
+      "main": [
+        [
+          {
+            "node": "Move a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Create a task1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task1": {
+      "main": [
+        [
+          {
+            "node": "Move a task1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7dfdd178-4211-454e-a4aa-70b68c6053cc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e9bc5f31543b38f3f3e621629a57de9364a6484f5dca267a394baeed0e6ebe5"
+  },
+  "nodeGroups": [],
+  "id": "USUXuFW32NNiAH9z",
+  "tags": []
+}
